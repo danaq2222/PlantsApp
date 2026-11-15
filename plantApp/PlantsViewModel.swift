@@ -30,6 +30,23 @@ final class PlantsViewModel {
     func addPlant(_ plant: Plant) {
         plants.append(plant)
         savePlants()
+        scheduleReminder(for: plant.id)
+    }
+
+    func updatePlant(_ plant: Plant) {
+        guard let index = plants.firstIndex(where: { $0.id == plant.id }) else {
+            return
+        }
+
+        plants[index] = plant
+        savePlants()
+        scheduleReminder(for: plant.id)
+    }
+
+    func deletePlant(_ plant: Plant) {
+        plants.removeAll { $0.id == plant.id }
+        savePlants()
+        WateringNotifications.cancel(for: plant.id)
     }
 
     func toggleWatering(for plant: Plant) {
@@ -41,18 +58,19 @@ final class PlantsViewModel {
         savePlants()
     }
 
-    func deletePlant(_ plant: Plant) {
-        plants.removeAll { $0.id == plant.id }
-        savePlants()
-    }
+    private func scheduleReminder(for id: UUID) {
+        Task { @MainActor in
+            guard await WateringNotifications.requestPermission(),
+                  let plant = plants.first(where: { $0.id == id }) else {
+                return
+            }
 
-    func updatePlant(_ plant: Plant) {
-        guard let index = plants.firstIndex(where: { $0.id == plant.id }) else {
-            return
+            await WateringNotifications.schedule(for: plant)
+
+            if !plants.contains(where: { $0.id == id }) {
+                WateringNotifications.cancel(for: id)
+            }
         }
-
-        plants[index] = plant
-        savePlants()
     }
 
     private func savePlants() {

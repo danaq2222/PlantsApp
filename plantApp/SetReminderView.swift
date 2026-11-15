@@ -4,6 +4,7 @@ struct SetReminderView: View {
     @Environment(\.dismiss) private var dismiss
 
     private let existingPlant: Plant?
+    private let onDelete: (() -> Void)?
     private let onSave: (Plant) -> Void
 
     @State private var plantName: String
@@ -12,8 +13,13 @@ struct SetReminderView: View {
     @State private var wateringDays: String
     @State private var water: String
 
-    init(existingPlant: Plant? = nil, onSave: @escaping (Plant) -> Void) {
+    init(
+        existingPlant: Plant? = nil,
+        onDelete: (() -> Void)? = nil,
+        onSave: @escaping (Plant) -> Void
+    ) {
         self.existingPlant = existingPlant
+        self.onDelete = onDelete
         self.onSave = onSave
 
         _plantName = State(initialValue: existingPlant?.name ?? "")
@@ -24,7 +30,8 @@ struct SetReminderView: View {
     }
 
     private let rooms = [
-        "Bedroom", "Living Room", "Kitchen", "Balcony", "Bathroom"
+        "Bedroom", "Living Room", "Kitchen",
+        "Balcony", "Bathroom"
     ]
 
     private let wateringOptions = [
@@ -33,7 +40,8 @@ struct SetReminderView: View {
     ]
 
     private let waterAmounts = [
-        "20-50 ml", "50-100 ml", "100-200 ml", "200-300 ml"
+        "20-50 ml", "50-100 ml",
+        "100-200 ml", "200-300 ml"
     ]
 
     private let green = Color(
@@ -136,9 +144,25 @@ struct SetReminderView: View {
                         )
                     }
                     .background(Color(white: 0.17), in: RoundedRectangle(cornerRadius: 24))
+
+                    if existingPlant != nil, let onDelete {
+                        Button(role: .destructive) {
+                            onDelete()
+                            dismiss()
+                        } label: {
+                            Text("Delete Reminder")
+                                .font(.subheadline)
+                                .foregroundStyle(.red)
+                                .frame(maxWidth: .infinity, minHeight: 44)
+                                .background(Color(white: 0.17), in: Capsule())
+                                .contentShape(Capsule())
+                        }
+                        .buttonStyle(.plain)
+                    }
                 }
                 .padding(.horizontal, 16)
                 .padding(.top, 36)
+                .padding(.bottom, 24)
             }
         }
         .background(Color(white: 0.12).ignoresSafeArea())

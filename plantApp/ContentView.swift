@@ -10,6 +10,7 @@ struct ContentView: View {
         green: 128.0 / 255,
         blue: 105.0 / 255
     )
+    private let waterColor = Color(red: 0.73, green: 0.85, blue: 0.88)
 
     var body: some View {
         ZStack {
@@ -42,7 +43,12 @@ struct ContentView: View {
             }
         }
         .sheet(item: $plantToEdit) { plant in
-            SetReminderView(existingPlant: plant) { updatedPlant in
+            SetReminderView(
+                existingPlant: plant,
+                onDelete: {
+                    viewModel.deletePlant(plant)
+                }
+            ) { updatedPlant in
                 viewModel.updatePlant(updatedPlant)
             }
         }
@@ -100,6 +106,10 @@ struct ContentView: View {
                     plantRow(plant)
                         .listRowInsets(EdgeInsets())
                         .listRowBackground(Color.black)
+                        .alignmentGuide(.listRowSeparatorLeading) { _ in 0 }
+                        .alignmentGuide(.listRowSeparatorTrailing) { dimensions in
+                            dimensions.width
+                        }
                         .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                             Button(role: .destructive) {
                                 viewModel.deletePlant(plant)
@@ -140,10 +150,22 @@ struct ContentView: View {
                 Text("\(viewModel.completedCount) of your plants feel loved today ✨")
             }
 
-            ProgressView(value: viewModel.progress)
-                .tint(green)
-                .animation(.easeInOut, value: viewModel.progress)
-                .accessibilityLabel("Watering progress")
+            GeometryReader { geometry in
+                Capsule()
+                    .fill(Color(white: 0.16))
+                    .overlay(alignment: .leading) {
+                        Capsule()
+                            .fill(Color(red: 0.36, green: 0.66, blue: 0.59))
+                            .frame(width: geometry.size.width * CGFloat(viewModel.progress))
+                    }
+                    .animation(.easeInOut, value: viewModel.progress)
+            }
+            .frame(height: 6)
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel("Watering progress")
+            .accessibilityValue(
+                Text(viewModel.progress, format: .percent.precision(.fractionLength(0)))
+            )
         }
         .font(.subheadline)
         .foregroundStyle(.white)
@@ -158,15 +180,11 @@ struct ContentView: View {
             Button {
                 viewModel.toggleWatering(for: plant)
             } label: {
-                Image(
-                    systemName: plant.isWatered
-                        ? "checkmark.circle.fill"
-                        : "circle"
-                )
-                .font(.title3)
-                .foregroundStyle(plant.isWatered ? Color.mint : Color.gray)
-                .frame(width: 44, height: 44)
-                .contentShape(Rectangle())
+                Image(systemName: plant.isWatered ? "checkmark.circle.fill" : "circle")
+                    .font(.title3)
+                    .foregroundStyle(plant.isWatered ? Color.mint : Color.gray)
+                    .frame(width: 44, height: 44)
+                    .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
             .accessibilityLabel(
@@ -175,10 +193,16 @@ struct ContentView: View {
                     : "Mark \(plant.name) as watered"
             )
 
-            VStack(alignment: .leading, spacing: 6) {
-                Label("in \(plant.room)", systemImage: "location")
-                    .font(.caption)
-                    .foregroundStyle(.gray)
+            VStack(alignment: .leading, spacing: 5) {
+                HStack(spacing: 4) {
+                    Image(systemName: "location")
+                        .font(.system(size: 10))
+                        .accessibilityHidden(true)
+
+                    Text("in \(plant.room)")
+                        .font(.caption)
+                }
+                .foregroundStyle(.gray)
 
                 Button {
                     plantToEdit = plant
@@ -191,18 +215,47 @@ struct ContentView: View {
                 .accessibilityHint("Opens the reminder for editing")
 
                 HStack(spacing: 8) {
-                    Label(plant.light.rawValue, systemImage: plant.light.icon)
-                        .foregroundStyle(.yellow)
+                    careBadge(
+                        plant.light.rawValue,
+                        icon: plant.light.icon,
+                        color: Color(red: 0.76, green: 0.71, blue: 0.46)
+                    )
 
-                    Label(plant.water, systemImage: "drop")
-                        .foregroundStyle(.cyan)
+                    careBadge(plant.water, icon: "drop", color: waterColor)
+                        .overlay {
+                            if !plant.isWatered {
+                                RoundedRectangle(cornerRadius: 5)
+                                    .strokeBorder(waterColor.opacity(0.55), lineWidth: 1)
+                                    .allowsHitTesting(false)
+                            }
+                        }
                 }
-                .font(.caption2)
             }
 
-            Spacer()
+            Spacer(minLength: 0)
         }
-        .padding(.vertical, 16)
+        .padding(.vertical, 10)
+    }
+
+    private func careBadge(
+        _ text: String,
+        icon: String,
+        color: Color
+    ) -> some View {
+        HStack(spacing: 4) {
+            Image(systemName: icon)
+                .accessibilityHidden(true)
+
+            Text(text)
+        }
+        .font(.caption2)
+        .foregroundStyle(color)
+        .padding(.horizontal, 6)
+        .padding(.vertical, 3)
+        .background(
+            Color(red: 0.11, green: 0.11, blue: 0.13),
+            in: RoundedRectangle(cornerRadius: 5)
+        )
     }
 }
 
