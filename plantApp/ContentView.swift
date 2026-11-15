@@ -2,6 +2,7 @@ import SwiftUI
 
 struct ContentView: View {
     @State private var showReminder = false
+    @State private var plantToEdit: Plant?
     @State private var viewModel = PlantsViewModel()
 
     private let green = Color(
@@ -38,6 +39,11 @@ struct ContentView: View {
         .sheet(isPresented: $showReminder) {
             SetReminderView { newPlant in
                 viewModel.addPlant(newPlant)
+            }
+        }
+        .sheet(item: $plantToEdit) { plant in
+            SetReminderView(existingPlant: plant) { updatedPlant in
+                viewModel.updatePlant(updatedPlant)
             }
         }
     }
@@ -174,12 +180,19 @@ struct ContentView: View {
                     .font(.caption)
                     .foregroundStyle(.gray)
 
-                Text(plant.name)
-                    .font(.title3)
-                    .foregroundStyle(plant.isWatered ? Color.gray : Color.white)
+                Button {
+                    plantToEdit = plant
+                } label: {
+                    Text(plant.name)
+                        .font(.title3)
+                        .foregroundStyle(plant.isWatered ? Color.gray : Color.white)
+                }
+                .buttonStyle(.plain)
+                .accessibilityHint("Opens the reminder for editing")
 
                 HStack(spacing: 8) {
-                    Label(plant.light.rawValue, systemImage: plant.light.icon)                        .foregroundStyle(.yellow)
+                    Label(plant.light.rawValue, systemImage: plant.light.icon)
+                        .foregroundStyle(.yellow)
 
                     Label(plant.water, systemImage: "drop")
                         .foregroundStyle(.cyan)
@@ -190,17 +203,6 @@ struct ContentView: View {
             Spacer()
         }
         .padding(.vertical, 16)
-    }
-
-    private func lightIcon(for light: String) -> String {
-        switch light {
-        case "Partial Sun":
-            return "sun.haze"
-        case "Low Light":
-            return "moon"
-        default:
-            return "sun.max"
-        }
     }
 }
 

@@ -3,17 +3,28 @@ import SwiftUI
 struct SetReminderView: View {
     @Environment(\.dismiss) private var dismiss
 
-    var onSave: (Plant) -> Void
+    private let existingPlant: Plant?
+    private let onSave: (Plant) -> Void
 
-    @State private var plantName = ""
-    @State private var room = "Bedroom"
-    @State private var light = PlantLight.fullSun
-    @State private var wateringDays = "Every day"
-    @State private var water = "20-50 ml"
+    @State private var plantName: String
+    @State private var room: String
+    @State private var light: PlantLight
+    @State private var wateringDays: String
+    @State private var water: String
+
+    init(existingPlant: Plant? = nil, onSave: @escaping (Plant) -> Void) {
+        self.existingPlant = existingPlant
+        self.onSave = onSave
+
+        _plantName = State(initialValue: existingPlant?.name ?? "")
+        _room = State(initialValue: existingPlant?.room ?? "Bedroom")
+        _light = State(initialValue: existingPlant?.light ?? .fullSun)
+        _wateringDays = State(initialValue: existingPlant?.wateringDays ?? "Every day")
+        _water = State(initialValue: existingPlant?.water ?? "20-50 ml")
+    }
 
     private let rooms = [
-        "Bedroom", "Living Room", "Kitchen",
-        "Balcony", "Bathroom"
+        "Bedroom", "Living Room", "Kitchen", "Balcony", "Bathroom"
     ]
 
     private let wateringOptions = [
@@ -58,16 +69,7 @@ struct SetReminderView: View {
                 Spacer()
 
                 Button {
-                    let plant = Plant(
-                        name: trimmedName,
-                        room: room,
-                        light: light,
-                        wateringDays: wateringDays,
-                        water: water
-                    )
-
-                    onSave(plant)
-                    dismiss()
+                    saveReminder()
                 } label: {
                     Image(systemName: "checkmark")
                         .font(.system(size: 18, weight: .medium))
@@ -141,6 +143,29 @@ struct SetReminderView: View {
         }
         .background(Color(white: 0.12).ignoresSafeArea())
         .preferredColorScheme(.dark)
+    }
+
+    private func saveReminder() {
+        guard !trimmedName.isEmpty else { return }
+
+        if var plant = existingPlant {
+            plant.name = trimmedName
+            plant.room = room
+            plant.light = light
+            plant.wateringDays = wateringDays
+            plant.water = water
+            onSave(plant)
+        } else {
+            onSave(Plant(
+                name: trimmedName,
+                room: room,
+                light: light,
+                wateringDays: wateringDays,
+                water: water
+            ))
+        }
+
+        dismiss()
     }
 
     private func optionRow<Option: Hashable>(

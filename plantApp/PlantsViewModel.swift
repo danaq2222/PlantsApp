@@ -40,8 +40,18 @@ final class PlantsViewModel {
         plants[index].isWatered.toggle()
         savePlants()
     }
+
     func deletePlant(_ plant: Plant) {
         plants.removeAll { $0.id == plant.id }
+        savePlants()
+    }
+
+    func updatePlant(_ plant: Plant) {
+        guard let index = plants.firstIndex(where: { $0.id == plant.id }) else {
+            return
+        }
+
+        plants[index] = plant
         savePlants()
     }
 
