@@ -28,7 +28,11 @@ struct ContentView: View {
                     .overlay(Color.gray.opacity(0.4))
 
                 if viewModel.plants.isEmpty {
-                    welcomeView
+                    if viewModel.hasCompletedWelcome {
+                        emptyStateView
+                    } else {
+                        welcomeView
+                    }
                 } else {
                     plantList
                 }
@@ -97,12 +101,58 @@ struct ContentView: View {
         .frame(maxWidth: .infinity)
     }
 
+    private var emptyStateView: some View {
+        VStack(spacing: 0) {
+            Spacer()
+
+            Image(systemName: "bell.slash")
+                .font(.system(size: 48))
+                .foregroundStyle(Color.mint)
+
+            Text("No reminders set yet")
+                .font(.title3)
+                .bold()
+                .foregroundStyle(.white)
+                .padding(.top, 24)
+
+            Text("Add a plant to start tracking its care.")
+                .font(.subheadline)
+                .foregroundStyle(.gray)
+                .multilineTextAlignment(.center)
+                .padding(.top, 12)
+
+            Spacer()
+                .frame(height: 48)
+
+            Button {
+                showReminder = true
+            } label: {
+                Text("Set Plant Reminder")
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 12)
+                    .contentShape(Capsule())
+                    .glassEffect(.regular.tint(green).interactive(), in: Capsule())
+            }
+            .buttonStyle(.plain)
+            .padding(.horizontal, 40)
+
+            Spacer()
+        }
+        .frame(maxWidth: .infinity)
+    }
+
     private var plantList: some View {
         VStack(spacing: 0) {
-            progressHeader
+            if viewModel.completedCount == viewModel.plants.count {
+                allDoneHeader
+            } else {
+                progressHeader
+            }
 
             List {
-                ForEach(viewModel.plants) { plant in
+                ForEach(viewModel.sortedPlants) { plant in
                     plantRow(plant)
                         .listRowInsets(EdgeInsets())
                         .listRowBackground(Color.black)
@@ -140,6 +190,28 @@ struct ContentView: View {
             }
             .padding(.vertical, 16)
         }
+    }
+
+    private var allDoneHeader: some View {
+        VStack(spacing: 12) {
+            Image(systemName: "checkmark.circle.fill")
+                .font(.largeTitle)
+                .foregroundStyle(Color.mint)
+
+            Text("All Done! 🎉")
+                .font(.title2)
+                .bold()
+                .foregroundStyle(.white)
+
+            Text("All your plants have been watered.")
+                .font(.subheadline)
+                .foregroundStyle(.gray)
+        }
+        .multilineTextAlignment(.center)
+        .frame(maxWidth: .infinity)
+        .padding(.horizontal, 16)
+        .padding(.top, 24)
+        .padding(.bottom, 28)
     }
 
     private var progressHeader: some View {

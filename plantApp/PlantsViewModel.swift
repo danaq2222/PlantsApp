@@ -5,6 +5,16 @@ import Observation
 final class PlantsViewModel {
     private(set) var plants: [Plant] = []
     private let storageKey = "savedPlants"
+    private let welcomeCompletedKey = "welcomeCompleted"
+
+    var hasCompletedWelcome: Bool {
+        UserDefaults.standard.bool(forKey: welcomeCompletedKey)
+            || UserDefaults.standard.data(forKey: storageKey) != nil
+    }
+
+    var sortedPlants: [Plant] {
+        plants.filter { !$0.isWatered } + plants.filter(\.isWatered)
+    }
 
     init() {
         guard let data = UserDefaults.standard.data(forKey: storageKey) else {
@@ -29,6 +39,7 @@ final class PlantsViewModel {
 
     func addPlant(_ plant: Plant) {
         plants.append(plant)
+        completeWelcome()
         savePlants()
         scheduleReminder(for: plant.id)
     }
@@ -45,6 +56,7 @@ final class PlantsViewModel {
 
     func deletePlant(_ plant: Plant) {
         plants.removeAll { $0.id == plant.id }
+        completeWelcome()
         savePlants()
         WateringNotifications.cancel(for: plant.id)
     }
@@ -80,5 +92,9 @@ final class PlantsViewModel {
         } catch {
             print("Could not save plants: \(error)")
         }
+    }
+
+    private func completeWelcome() {
+        UserDefaults.standard.set(true, forKey: welcomeCompletedKey)
     }
 }
