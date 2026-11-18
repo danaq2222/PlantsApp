@@ -4,8 +4,8 @@ import UserNotifications
 enum WateringNotifications {
     private static let center = UNUserNotificationCenter.current()
 
-    // بعد نجاح الاختبار، غيّري true إلى false
-    private static let testMode = true
+   
+    private static let testMode = false
 
     static func requestPermission() async -> Bool {
         do {
